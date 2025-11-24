@@ -1,78 +1,81 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import { AuthService } from "./auth.service";
 import {
-  registerSchema,
+  signupSchema,
   loginSchema,
   verifyEmailSchema,
-  requestResetSchema,
+  requestPasswordResetSchema,
   resetPasswordSchema,
 } from "./auth.validators";
-import {
-  registerUser,
-  loginUser,
-  verifyEmail,
-  requestPasswordReset,
-  resetPassword,
-} from "./auth.service";
+import { IUserDocument } from "../users/user.model";
 
-export async function registerHandler(req: Request, res: Response) {
-  try {
-    const input = registerSchema.parse(req.body);
-    const user = await registerUser(input);
-    res.status(201).json({ id: user._id, email: user.email, name: user.name });
-  } catch (err: any) {
-    console.error(err);
-    res.status(400).json({ error: err.message ?? "Unable to register" });
-  }
+function toUserDTO(user: IUserDocument) {
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    isEmailVerified: user.isEmailVerified,
+  };
 }
 
-export async function loginHandler(req: Request, res: Response) {
-  try {
-    const input = loginSchema.parse(req.body);
-    const { user, token } = await loginUser(input);
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        isEmailVerified: user.isEmailVerified,
-      },
-    });
-  } catch (err: any) {
-    console.error(err);
-    res.status(400).json({ error: err.message ?? "Unable to login" });
+export class AuthController {
+  static async signup(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = signupSchema.parse(req.body);
+      const result = await AuthService.signup(parsed);
+      res.status(201).json({
+        user: toUserDTO(result.user),
+        token: result.token,
+        needsEmailVerification: result.needsEmailVerification,
+      });
+    } catch (err) {
+      next(err);
+    }
   }
-}
 
-export async function verifyEmailHandler(req: Request, res: Response) {
-  try {
-    const input = verifyEmailSchema.parse(req.body);
-    const user = await verifyEmail(input);
-    res.json({ message: "Email verified", isEmailVerified: user.isEmailVerified });
-  } catch (err: any) {
-    console.error(err);
-    res.status(400).json({ error: err.message ?? "Unable to verify email" });
+  static async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = loginSchema.parse(req.body);
+      const result = await AuthService.login(parsed);
+      res.json({
+        user: toUserDTO(result.user),
+        token: result.token,
+      });
+    } catch (err) {
+      next(err);
+    }
   }
-}
 
-export async function requestResetHandler(req: Request, res: Response) {
-  try {
-    const input = requestResetSchema.parse(req.body);
-    await requestPasswordReset(input);
-    res.json({ message: "If that email exists, a reset link was sent." });
-  } catch (err: any) {
-    console.error(err);
-    res.status(400).json({ error: err.message ?? "Unable to request reset" });
+  static async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = verifyEmailSchema.parse(req.body);
+      const result = await AuthService.verifyEmail(parsed);
+      res.json({
+        user: toUserDTO(result.user),
+        token: result.token,
+      });
+    } catch (err) {
+      next(err);
+    }
   }
-}
 
-export async function resetPasswordHandler(req: Request, res: Response) {
-  try {
-    const input = resetPasswordSchema.parse(req.body);
-    await resetPassword(input);
-    res.json({ message: "Password reset successful" });
-  } catch (err: any) {
-    console.error(err);
-    res.status(400).json({ error: err.message ?? "Unable to reset password" });
+  static async requestPasswordReset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = requestPasswordResetSchema.parse(req.body);
+      await AuthService.requestPasswordReset(parsed);
+      res.json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const parsed = resetPasswordSchema.parse(req.body);
+      await AuthService.resetPassword(parsed);
+      res.json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
   }
 }

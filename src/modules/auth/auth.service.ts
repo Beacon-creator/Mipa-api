@@ -1,100 +1,119 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
-import { UserModel, IUser } from "../users/user.model";
+import { User, IUserDocument } from "../users/user.model";
 import {
-  RegisterInput,
+  SignupInput,
   LoginInput,
   VerifyEmailInput,
-  RequestResetInput,
+  RequestPasswordResetInput,
   ResetPasswordInput,
-} from "./auth.validators";
+} from "./auth.types";
+import { generate4DigitCode, signToken } from "./auth.utils";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
-const JWT_EXPIRES_IN = "7d";
+const SALT_ROUNDS = 10;
 
-export function signJwt(user: IUser) {
-  return jwt.sign(
-    { sub: user._id.toString(), email: user.email },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
-}
+export class AuthService {
+  static async signup(payload: SignupInput) {
+    const existing = await User.findOne({ email: payload.email.toLowerCase() });
+    if (existing) {
+      throw new Error("Email already in use");
+    }
 
-export async function registerUser(input: RegisterInput) {
-  const existing = await UserModel.findOne({ email: input.email });
-  if (existing) {
-    throw new Error("Email already in use");
+    const passwordHash = await bcrypt.hash(payload.password, SALT_ROUNDS);
+    const code = generate4DigitCode();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    const user = await User.create({
+      name: payload.name,
+      email: payload.email.toLowerCase(),
+      passwordHash,
+      isEmailVerified: false,
+      emailVerificationCode: code,
+      emailVerificationCodeExpiresAt: expires,
+    });
+
+    // TODO: send verification email with 'code' here
+    // await EmailService.sendVerificationCode(user.email, code);
+
+    const token = signToken(user._id.toString());
+
+    return { user, token, needsEmailVerification: true };
   }
 
-  const passwordHash = await bcrypt.hash(input.password, 10);
-  const emailVerificationCode = crypto.randomInt(1000, 9999).toString();
+  static async login(payload: LoginInput) {
+    const user = await User.findOne({ email: payload.email.toLowerCase() });
+    if (!user) throw new Error("Invalid credentials");
 
-  const user = await UserModel.create({
-    name: input.name,
-    email: input.email,
-    passwordHash,
-    emailVerificationCode,
-  });
+    const ok = await bcrypt.compare(payload.password, user.passwordHash);
+    if (!ok) throw new Error("Invalid credentials");
 
-  // TODO: send emailVerificationCode to user.email
-  return user;
-}
-
-export async function loginUser(input: LoginInput) {
-  const user = await UserModel.findOne({ email: input.email });
-  if (!user) throw new Error("Invalid credentials");
-
-  const ok = await bcrypt.compare(input.password, user.passwordHash);
-  if (!ok) throw new Error("Invalid credentials");
-
-  const token = signJwt(user);
-  return { user, token };
-}
-
-export async function verifyEmail(input: VerifyEmailInput) {
-  const user = await UserModel.findOne({ email: input.email });
-  if (!user) throw new Error("User not found");
-
-  if (user.isEmailVerified) return user;
-
-  if (user.emailVerificationCode !== input.code) {
-    throw new Error("Invalid verification code");
+    const token = signToken(user._id.toString());
+    return { user, token };
   }
 
-  user.isEmailVerified = true;
-  user.emailVerificationCode = null;
-  await user.save();
+  static async verifyEmail(payload: VerifyEmailInput) {
+    const user = await User.findOne({ email: payload.email.toLowerCase() });
+    if (!user) throw new Error("User not found");
 
-  return user;
-}
+    if (!user.emailVerificationCode || !user.emailVerificationCodeExpiresAt) {
+      throw new Error("No verification code on file");
+    }
 
-export async function requestPasswordReset(input: RequestResetInput) {
-  const user = await UserModel.findOne({ email: input.email });
-  if (!user) return; // don't leak
+    const now = new Date();
+    if (user.emailVerificationCodeExpiresAt < now) {
+      throw new Error("Verification code expired");
+    }
 
-  const token = crypto.randomBytes(24).toString("hex");
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+    if (user.emailVerificationCode !== payload.code) {
+      throw new Error("Invalid verification code");
+    }
 
-  user.resetPasswordToken = token;
-  user.resetPasswordExpiresAt = expiresAt;
-  await user.save();
+    user.isEmailVerified = true;
+    user.emailVerificationCode = null;
+    user.emailVerificationCodeExpiresAt = null;
+    await user.save();
 
-  // TODO: send token link or code via email
-  // e.g. https://mipa.com/reset-password?token=...
-}
+    const token = signToken(user._id.toString());
+    return { user, token };
+  }
 
-export async function resetPassword(input: ResetPasswordInput) {
-  const user = await UserModel.findOne({
-    resetPasswordToken: input.token,
-    resetPasswordExpiresAt: { $gt: new Date() },
-  });
-  if (!user) throw new Error("Invalid or expired reset token");
+  static async requestPasswordReset(payload: RequestPasswordResetInput) {
+    const user = await User.findOne({ email: payload.email.toLowerCase() });
+    if (!user) {
+      // You can choose to not reveal that user doesn't exist
+      return;
+    }
 
-  user.passwordHash = await bcrypt.hash(input.password, 10);
-  user.resetPasswordToken = null;
-  user.resetPasswordExpiresAt = null;
-  await user.save();
+    const token = generate4DigitCode(); // or a longer random token
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
 
-  return user;
+    user.resetPasswordToken = token;
+    user.resetPasswordExpiresAt = expires;
+    await user.save();
+
+    // TODO: send password reset email with 'token'
+    // await EmailService.sendPasswordReset(user.email, token);
+  }
+
+  static async resetPassword(payload: ResetPasswordInput) {
+    const user = await User.findOne({ email: payload.email.toLowerCase() });
+    if (!user) throw new Error("User not found");
+
+    if (!user.resetPasswordToken || !user.resetPasswordExpiresAt) {
+      throw new Error("No reset token on file");
+    }
+
+    const now = new Date();
+    if (user.resetPasswordExpiresAt < now) {
+      throw new Error("Reset token expired");
+    }
+
+    if (user.resetPasswordToken !== payload.token) {
+      throw new Error("Invalid reset token");
+    }
+
+    user.passwordHash = await bcrypt.hash(payload.newPassword, SALT_ROUNDS);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiresAt = null;
+    await user.save();
+  }
 }
