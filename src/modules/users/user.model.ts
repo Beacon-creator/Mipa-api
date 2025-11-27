@@ -12,9 +12,7 @@ export interface IUser {
   location?: string;
 }
 
-// The actual document type stored in Mongo
 export interface IUserDocument extends IUser, Document {}
-
 export interface IUserModel extends Model<IUserDocument> {}
 
 const UserSchema = new Schema<IUserDocument>(

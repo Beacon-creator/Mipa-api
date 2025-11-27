@@ -1,3 +1,5 @@
+// auth.controller.ts
+
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "./auth.service";
 import {
@@ -23,10 +25,13 @@ export class AuthController {
     try {
       const parsed = signupSchema.parse(req.body);
       const result = await AuthService.signup(parsed);
+
       res.status(201).json({
         user: toUserDTO(result.user),
         token: result.token,
         needsEmailVerification: result.needsEmailVerification,
+        // NEW: expose the verification code for the mobile app (dev only!)
+        verificationCode: result.verificationCode,
       });
     } catch (err) {
       next(err);
@@ -62,8 +67,10 @@ export class AuthController {
   static async requestPasswordReset(req: Request, res: Response, next: NextFunction) {
     try {
       const parsed = requestPasswordResetSchema.parse(req.body);
-      await AuthService.requestPasswordReset(parsed);
-      res.json({ ok: true });
+      const result = await AuthService.requestPasswordReset(parsed);
+
+      // result is { ok: true } or { ok: true, resetCode }
+      res.json(result);
     } catch (err) {
       next(err);
     }

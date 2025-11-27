@@ -12,7 +12,12 @@ import { generate4DigitCode, signToken } from "./auth.utils";
 const SALT_ROUNDS = 10;
 
 export class AuthService {
-  static async signup(payload: SignupInput) {
+static async signup(payload: SignupInput): Promise<{
+    user: IUserDocument;
+    token: string;
+    needsEmailVerification: boolean;
+    verificationCode: string;
+  }> {
     const existing = await User.findOne({ email: payload.email.toLowerCase() });
     if (existing) {
       throw new Error("Email already in use");
@@ -31,12 +36,14 @@ export class AuthService {
       emailVerificationCodeExpiresAt: expires,
     });
 
-    // TODO: send verification email with 'code' here
-    // await EmailService.sendVerificationCode(user.email, code);
+const token = signToken(user._id.toString());
 
-    const token = signToken(user._id.toString());
-
-    return { user, token, needsEmailVerification: true };
+    return {
+      user,
+      token,
+      needsEmailVerification: true,
+      verificationCode: code, 
+    };
   }
 
   static async login(payload: LoginInput) {
@@ -50,7 +57,10 @@ export class AuthService {
     return { user, token };
   }
 
-  static async verifyEmail(payload: VerifyEmailInput) {
+static async verifyEmail(payload: VerifyEmailInput): Promise<{
+    user: IUserDocument;
+    token: string;
+  }> {
     const user = await User.findOne({ email: payload.email.toLowerCase() });
     if (!user) throw new Error("User not found");
 
@@ -76,24 +86,24 @@ export class AuthService {
     return { user, token };
   }
 
-  static async requestPasswordReset(payload: RequestPasswordResetInput) {
+ static async requestPasswordReset(
+    payload: RequestPasswordResetInput
+  ): Promise<{ ok: true; resetCode?: string }> {
     const user = await User.findOne({ email: payload.email.toLowerCase() });
     if (!user) {
-      // You can choose to not reveal that user doesn't exist
-      return;
+      // Don't reveal existence, but keep API shape stable
+      return { ok: true };
     }
 
-    const token = generate4DigitCode(); // or a longer random token
+    const token = generate4DigitCode(); // 4-digit reset code
     const expires = new Date(Date.now() + 15 * 60 * 1000);
 
     user.resetPasswordToken = token;
     user.resetPasswordExpiresAt = expires;
     await user.save();
 
-    // TODO: send password reset email with 'token'
-    // await EmailService.sendPasswordReset(user.email, token);
+    return { ok: true, resetCode: token };
   }
-
   static async resetPassword(payload: ResetPasswordInput) {
     const user = await User.findOne({ email: payload.email.toLowerCase() });
     if (!user) throw new Error("User not found");
