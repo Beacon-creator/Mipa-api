@@ -8,5 +8,7 @@ router.post("/login", AuthController.login);
 router.post("/verify-email", AuthController.verifyEmail);
 router.post("/password/forgot", AuthController.requestPasswordReset);
 router.post("/password/reset", AuthController.resetPassword);
+router.post("/logout", AuthController.logout);
+
 
 export default router;

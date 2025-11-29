@@ -1,13 +1,15 @@
 import { Schema, model, Document, Model, Types } from "mongoose";
 
 export interface IMenuItem {
-  restaurant: Types.ObjectId;
+  restaurant: Types.ObjectId;              // FK → Restaurant._id
   name: string;
   description?: string;
-  price: number;
   imageUrl?: string;
-  type: string;      // "food" | "drink" | "snacks" | etc
+  price: number;
+  // e.g. "food", "drink", "cake", "snacks" → to match your Home categories
+  type: string;
   isAvailable: boolean;
+  // optional tags like "spicy", "vegan", etc.
   tags?: string[];
 }
 
@@ -23,12 +25,12 @@ const MenuItemSchema = new Schema<IMenuItemDocument>(
       index: true,
     },
     name: { type: String, required: true, trim: true },
-    description: { type: String, trim: true },
+    description: { type: String },
+    imageUrl: { type: String },
     price: { type: Number, required: true, min: 0 },
-    imageUrl: { type: String, trim: true },
-    type: { type: String, required: true, index: true }, // category/type
+    type: { type: String, required: true, index: true }, // "food" | "drink" | ...
     isAvailable: { type: Boolean, default: true },
-    tags: [{ type: String }],
+    tags: { type: [String], default: [] },
   },
   { timestamps: true }
 );

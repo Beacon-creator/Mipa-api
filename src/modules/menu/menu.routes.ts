@@ -1,15 +1,20 @@
 import { Router } from "express";
-import { MenuController } from "./menu.controller";
+import {
+  listMenuItems,
+  getMenuItemById,
+  createMenuItem,
+} from "./menu.controller";
+// import { authMiddleware } from "../../shared/middleware/auth.middleware"; // if needed
 
 const router = Router();
 
-// GET /api/menu?restaurantId=&type=&search=&minPrice=&maxPrice=
-router.get("/", MenuController.list);
+// Public: list + search + filter
+router.get("/", listMenuItems);
 
-// GET /api/menu/:id
-router.get("/:id", MenuController.getById);
+// Public: single menu item
+router.get("/:id", getMenuItemById);
 
-// POST /api/menu
-router.post("/", MenuController.create);
+// Dev/Admin: create menu item (protect later with auth/roles)
+router.post("/", /* authMiddleware, */ createMenuItem);
 
 export default router;

@@ -85,4 +85,14 @@ export class AuthController {
       next(err);
     }
   }
+
+  static async logout(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Stateless logout: client should simply delete the token
+    return res.json({ ok: true, message: "Logged out" });
+  } catch (err) {
+    next(err);
+  }
+}
+
 }
