@@ -126,4 +126,37 @@ static async verifyEmail(payload: VerifyEmailInput): Promise<{
     user.resetPasswordExpiresAt = null;
     await user.save();
   }
+
+
+  static async resendVerification(payload: { email: string }): Promise<{ ok: true; verificationCode?: string }> {
+    const email = payload.email.toLowerCase();
+    const user = await User.findOne({ email });
+    if (!user) {
+      return { ok: true }; // avoid revealing whether email exists
+    }
+
+    const code = generate4DigitCode();
+    user.emailVerificationCode = code;
+    user.emailVerificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    await user.save();
+
+    return { ok: true, verificationCode: code };
+  }
+
+  static async resendPasswordReset(payload: { email: string }): Promise<{ ok: true; resetCode?: string }> {
+    const email = payload.email.toLowerCase();
+    const user = await User.findOne({ email });
+    if (!user) {
+      return { ok: true };
+    }
+
+    const token = generate4DigitCode();
+    user.resetPasswordToken = token;
+    user.resetPasswordExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    await user.save();
+
+    // In production: send password reset email. Dev: return the code
+    return { ok: true, resetCode: token };
+  }
 }
+

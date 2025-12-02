@@ -6,10 +6,8 @@ export interface IMenuItem {
   description?: string;
   imageUrl?: string;
   price: number;
-  // e.g. "food", "drink", "cake", "snacks" → to match your Home categories
   type: string;
   isAvailable: boolean;
-  // optional tags like "spicy", "vegan", etc.
   tags?: string[];
 }
 

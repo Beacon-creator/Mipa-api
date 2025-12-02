@@ -9,6 +9,7 @@ router.post("/verify-email", AuthController.verifyEmail);
 router.post("/password/forgot", AuthController.requestPasswordReset);
 router.post("/password/reset", AuthController.resetPassword);
 router.post("/logout", AuthController.logout);
-
+router.post("/resend-verification", AuthController.resendVerification);
+router.post("/password/resend", AuthController.resendPasswordReset);
 
 export default router;

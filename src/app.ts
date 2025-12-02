@@ -5,7 +5,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import userRoutes from "./modules/users/user.routes";
 import restaurantRoutes from "./modules/restaurants/restaurant.routes";
 import menuRoutes from "./modules/menu/menu.routes";
-
+import orderRoutes from "./modules/order/order.routes";
 
 
 const app = express();
@@ -20,6 +20,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/menu", menuRoutes);
-//app.use("/api/orders", orderRoutes);
+app.use("/api/orders", orderRoutes);
 
 export default app;

@@ -95,4 +95,34 @@ export class AuthController {
   }
 }
 
+static async resendVerification(req: Request, res: Response, next: NextFunction) {
+    try {
+      // expect { email }
+      const emailBody = (req.body && req.body.email) ? { email: String(req.body.email) } : null;
+      if (!emailBody || !emailBody.email) {
+        return res.status(400).json({ message: "email is required" });
+      }
+
+      const result = await AuthService.resendVerification(emailBody);
+      // returns { ok: true } or { ok:true, verificationCode }
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async resendPasswordReset(req: Request, res: Response, next: NextFunction) {
+    try {
+      const emailBody = (req.body && req.body.email) ? { email: String(req.body.email) } : null;
+      if (!emailBody || !emailBody.email) {
+        return res.status(400).json({ message: "email is required" });
+      }
+
+      const result = await AuthService.resendPasswordReset(emailBody);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
 }
