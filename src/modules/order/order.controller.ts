@@ -4,7 +4,7 @@ import { Order } from "./order.model";
 import { MenuItem } from "../menu/menuItem.model";
 
 function generateOrderNumber() {
-  // Simple: YYYYMMDD + random 4 digits
+
   const now = new Date();
   const datePart = [
     now.getFullYear(),
