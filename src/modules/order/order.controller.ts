@@ -35,79 +35,79 @@ function toOrderDTO(order: any) {
 
 export class OrderController {
 
-  static async create(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = (req as any).userId as string; // from authMiddleware
-      const {
-        restaurantId,
-        items,
-        address,
-        paymentMethod = "card",
-        notes,
-      } = req.body as {
-        restaurantId: string;
-        items: { menuItemId: string; quantity: number }[];
-        address: {
-          line1: string;
-          line2?: string;
-          city: string;
-          state?: string;
-          country: string;
-          postalCode?: string;
-        };
-        paymentMethod?: "card" | "cash" | "wallet";
-        notes?: string;
-      };
+static async create(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).userId as string;
+    const {
+      restaurantId,
+      items,
+      address,
+      paymentMethod = "card",
+      notes,
+    } = req.body as {
+      restaurantId: string;
+      items: { menuItemId: string; quantity: number }[];
+      address: any;
+      paymentMethod?: "card" | "cash" | "wallet";
+      notes?: string;
+    };
 
-      if (!items || !Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ message: "Order items are required" });
-      }
-
-      // Fetch the referenced menu items to get name & price
-      const menuItemIds = items.map((i) => new Types.ObjectId(i.menuItemId));
-      const menuDocs = await MenuItem.find({ _id: { $in: menuItemIds } });
-
-      if (menuDocs.length !== items.length) {
-        return res
-          .status(400)
-          .json({ message: "One or more menu items are invalid" });
-      }
-
-      const orderItems = items.map((i) => {
-        const doc = menuDocs.find(
-          (m) => m._id.toString() === i.menuItemId.toString()
-        );
-        if (!doc) throw new Error("Menu item mismatch");
-        const subtotal = doc.price * i.quantity;
-        return {
-          menuItem: doc._id,
-          name: doc.name,
-          price: doc.price,
-          quantity: i.quantity,
-          subtotal,
-        };
-      });
-
-      const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
-
-      const order = await Order.create({
-        user: new Types.ObjectId(userId),
-        restaurant: new Types.ObjectId(restaurantId),
-        items: orderItems,
-        status: "pending",
-        paymentStatus: "pending",
-        paymentMethod,
-        totalAmount,
-        address,
-        notes: notes ?? "", // 👈 avoid undefined to fix TS error
-        orderNumber: generateOrderNumber(),
-      });
-
-      res.status(201).json(toOrderDTO(order));
-    } catch (err) {
-      next(err);
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Order items are required" });
     }
+
+    // Validate restaurantId
+    if (!Types.ObjectId.isValid(restaurantId)) {
+      return res.status(400).json({ message: "Invalid restaurantId" });
+    }
+
+    // Validate each menuItemId
+    const validItems = items.filter((i) => Types.ObjectId.isValid(i.menuItemId));
+    if (validItems.length !== items.length) {
+      return res.status(400).json({ message: "One or more menuItemIds are invalid" });
+    }
+
+    // Fetch menu items
+    const menuItemIds = validItems.map((i) => new Types.ObjectId(i.menuItemId));
+    const menuDocs = await MenuItem.find({ _id: { $in: menuItemIds } });
+
+    if (menuDocs.length !== validItems.length) {
+      return res.status(400).json({ message: "One or more menu items do not exist" });
+    }
+
+    // Map items with price & subtotal
+    const orderItems = validItems.map((i) => {
+      const doc = menuDocs.find((m) => m._id.toString() === i.menuItemId);
+      if (!doc) throw new Error("Menu item mismatch");
+      return {
+        menuItem: doc._id,
+        name: doc.name,
+        price: doc.price,
+        quantity: i.quantity,
+        subtotal: doc.price * i.quantity,
+      };
+    });
+
+    const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+    const order = await Order.create({
+      user: new Types.ObjectId(userId),
+      restaurant: new Types.ObjectId(restaurantId),
+      items: orderItems,
+      status: "pending",
+      paymentStatus: "pending",
+      paymentMethod,
+      totalAmount,
+      address,
+      notes: notes ?? "",
+      orderNumber: generateOrderNumber(),
+    });
+
+    res.status(201).json(toOrderDTO(order));
+  } catch (err) {
+    next(err);
   }
+}
 
 
   static async markPaid(req: Request, res: Response, next: NextFunction) {
