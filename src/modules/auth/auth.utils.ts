@@ -1,6 +1,6 @@
 import jwt, { type Secret, type SignOptions } from "jsonwebtoken";
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET ?? "dev-secret-change-me";
+const JWT_SECRET: Secret = process.env.JWT_SECRET ?? "";
 
 
 const JWT_EXPIRES_IN: SignOptions["expiresIn"] | undefined =
@@ -12,7 +12,7 @@ export function signToken(userId: string) {
   const options: SignOptions = {};
 
   if (JWT_EXPIRES_IN !== undefined) {
-    options.expiresIn = JWT_EXPIRES_IN; // now type is string | number only
+    options.expiresIn = JWT_EXPIRES_IN;
   }
 
   return jwt.sign(payload, JWT_SECRET, options);
