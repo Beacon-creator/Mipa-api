@@ -47,4 +47,22 @@ export class OrderController {
       next(err);
     }
   }
+  
+  static async pay(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).userId as string;
+    const orderId = req.params.id as string;
+
+    const order = await OrderService.markPaid(userId, orderId, {
+      paymentStatus: "paid",
+      paymentMethod: "card",
+    });
+
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
 }
+
+}
+

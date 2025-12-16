@@ -13,6 +13,8 @@ router.patch("/:id/pay", authMiddleware, OrderController.markPaid);
 // my orders list (for receipts/history)
 router.get("/", authMiddleware, OrderController.listMine);
 
+router.post("/:id/pay", authMiddleware, OrderController.pay);
+
 // single order details (receipt)
 router.get("/:id", authMiddleware, OrderController.getById);
 

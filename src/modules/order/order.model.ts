@@ -8,7 +8,7 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
-export type PaymentStatus = "unpaid" | "paid" | "refunded";
+export type PaymentStatus = "unpaid" | "paid" | "refunded" | "failed";
 
 export interface IOrderItem {
   menuItem: Types.ObjectId;

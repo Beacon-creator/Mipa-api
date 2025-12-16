@@ -83,7 +83,7 @@ export class OrderService {
       restaurant: new Types.ObjectId(dto.restaurantId),
       items: orderItems,
       status: "pending",
-      paymentStatus: "pending",
+      paymentStatus: "unpaid",
       paymentMethod: dto.paymentMethod ?? "card",
       totalAmount,
       address: dto.address,
@@ -97,28 +97,62 @@ export class OrderService {
   /**
    * Mark an order paid (or update payment status)
    */
-  static async markPaid(userId: string, orderId: string, opts: { paymentStatus?: "paid" | "failed"; paymentMethod?: string } = {}) {
-    const update: any = {
-      paymentStatus: opts.paymentStatus ?? "paid",
-    };
-    if (update.paymentStatus === "paid") update.status = "confirmed";
-    if (opts.paymentMethod) update.paymentMethod = opts.paymentMethod;
+static async markPaid(
+  userId: string,
+  orderId: string,
+  opts: { paymentStatus?: "paid" | "failed"; paymentMethod?: string } = {}
+) {
+  const order = await Order.findOne({ _id: orderId, user: userId });
+  if (!order) throw new Error("Order not found");
 
-    const order = await Order.findOneAndUpdate({ _id: orderId, user: userId }, update, { new: true });
-    if (!order) throw new Error("Order not found");
-    return toOrderDTO(order);
+  // 🚫 Prevent double payment
+  if (order.paymentStatus === "paid") {
+    throw new Error("Order has already been paid");
   }
+
+  order.paymentStatus = opts.paymentStatus ?? "paid";
+  if (order.paymentStatus === "paid") {
+    order.status = "confirmed";
+  }
+
+  if (opts.paymentMethod) {
+    order.paymentMethod = opts.paymentMethod;
+  }
+
+  await order.save();
+  return toOrderDTO(order);
+}
+
 
   static async listMine(userId: string) {
     const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).populate("restaurant", "name location");
     return orders.map(toOrderDTO);
   }
 
-  static async getById(userId: string, orderId: string) {
-    const order = await Order.findOne({ _id: orderId, user: userId }).populate("restaurant", "name location");
-    if (!order) throw new Error("Order not found");
-    return toOrderDTO(order);
+static async getById(userId: string, orderId: string) {
+  let query: any = { user: userId };
+
+  // If valid ObjectId → search by _id
+  if (Types.ObjectId.isValid(orderId)) {
+    query._id = new Types.ObjectId(orderId);
+  } 
+  // Otherwise → search by orderNumber
+  else {
+    query.orderNumber = orderId;
   }
+
+  const order = await Order.findOne(query).populate(
+    "restaurant",
+    "name location"
+  );
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  return toOrderDTO(order);
+}
+
 }
 
 export default OrderService;
