@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import { User, IUserDocument, IAddress } from "./user.model";
 import { generateOTP } from "../../utils/otp";
-
+import { deleteOldAvatar } from "./avatar.utils";
 
 function getUserId(req: Request): string | null {
   return (req as any).userId ?? null; // set by auth.middleware
@@ -458,3 +458,35 @@ export async function setDefaultAddressHandler(
     next(err);
   }
 }
+
+// POST /api/users/me/avatar
+export async function uploadAvatarHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // 🧹 delete old avatar
+    await deleteOldAvatar(user.avatarUrl);
+
+    user.avatarUrl = avatarUrl;
+    await user.save();
+
+    res.json({ avatarUrl });
+  } catch (err) {
+    next(err);
+  }
+}
+

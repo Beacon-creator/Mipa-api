@@ -23,6 +23,8 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
 
+    "typeRoots": ["./node_modules/@types", "./src/shared/types"],
+
     // Others
     "skipLibCheck": true
   },

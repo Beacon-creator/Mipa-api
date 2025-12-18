@@ -12,9 +12,11 @@ import {
   upsertAddressHandler,
   listAddressesHandler,
   confirmEmailChangeHandler,
-  requestEmailChangeHandler
+  requestEmailChangeHandler,
+  uploadAvatarHandler,
 } from "./user.controller";
-import { authMiddleware } from "../../shared/middleware/auth.middleware";
+import { authMiddleware, avatarUploadLimiter, uploadAvatar } from "../../shared/middleware/auth.middleware";
+import { processAvatar } from "./avatar.utils";
 
 const router = Router();
 
@@ -24,6 +26,8 @@ router.use(authMiddleware);
 router.get("/me", getMeHandler);
 
 router.patch("/me/profile", updateProfileHandler);
+
+router.post("/me/avatar", authMiddleware, avatarUploadLimiter, uploadAvatar.single("avatar"), processAvatar, uploadAvatarHandler);
 
 router.patch("/me/email", updateEmailHandler);
 

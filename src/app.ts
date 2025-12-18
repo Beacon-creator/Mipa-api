@@ -22,4 +22,7 @@ app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 
+app.use("/uploads", express.static("uploads"));
+
+
 export default app;
