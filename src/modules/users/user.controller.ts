@@ -466,8 +466,10 @@ export async function uploadAvatarHandler(
   next: NextFunction
 ) {
   try {
-    const userId = getUserId(req);
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const userId = (req as any).userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -476,9 +478,10 @@ export async function uploadAvatarHandler(
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    // 🧹 delete old avatar
     await deleteOldAvatar(user.avatarUrl);
 
     user.avatarUrl = avatarUrl;

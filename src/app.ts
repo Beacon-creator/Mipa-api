@@ -6,7 +6,7 @@ import userRoutes from "./modules/users/user.routes";
 import restaurantRoutes from "./modules/restaurants/restaurant.routes";
 import menuRoutes from "./modules/menu/menu.routes";
 import orderRoutes from "./modules/order/order.routes";
-
+import path from "path";
 
 const app = express();
 
@@ -22,7 +22,7 @@ app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/orders", orderRoutes);
 
-app.use("/uploads", express.static("uploads"));
+app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 
 export default app;
