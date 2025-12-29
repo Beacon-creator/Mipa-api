@@ -12,12 +12,10 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/mipa";
 const WIPE = process.env.SEED_WIPE === "true";
 
 async function main() {
-  console.log("Connecting to MongoDB...", MONGO_URI);
   await mongoose.connect(MONGO_URI, {});
 
   try {
     if (WIPE) {
-      console.log("Wiping restaurants & menu items (SEED_WIPE=true)...");
       await Promise.all([Restaurant.deleteMany({}), MenuItem.deleteMany({})]);
     }
 
@@ -45,7 +43,7 @@ async function main() {
     ];
 
     const createdRestaurants = await Restaurant.create(restaurantsData);
-    console.log("Created restaurants:");
+
     (createdRestaurants as any[]).forEach((r: any) =>
       console.log(`- ${r.name}  id=${r._id?.toString()}`)
     );
@@ -97,14 +95,10 @@ async function main() {
     ];
 
     const createdMenu = await MenuItem.create(menuItemsData);
-    console.log("Created menu items:");
     (createdMenu as any[]).forEach((m: any) =>
       console.log(`- ${m.name}  id=${m._id?.toString()}  restaurant=${m.restaurant?.toString()}`)
     );
-
-    console.log("\nSeeder finished. Use the printed ids in the frontend to test 'buy now' / checkout.");
   } catch (err) {
-    console.error("Seeder error:", err);
   } finally {
     await mongoose.disconnect();
     process.exit(0);
@@ -112,6 +106,5 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Top-level seeder error:", err);
   process.exit(1);
 });

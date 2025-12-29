@@ -186,9 +186,6 @@ export async function contactUsHandler(req: Request, res: Response, next: NextFu
       return res.status(400).json({ message: "subject and message are required" });
     }
 
-    // You can store this in a "SupportTicket" collection later.
-    console.log("Contact us:", { userId, subject, message });
-
     res.json({ ok: true });
   } catch (err) {
     next(err);
