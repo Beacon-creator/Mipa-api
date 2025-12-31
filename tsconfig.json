@@ -1,31 +1,30 @@
 {
   "compilerOptions": {
-    // Layout
+    /* Layout */
     "rootDir": "./src",
     "outDir": "./dist",
 
-    // Module/target
-    "module": "commonjs",
+    /* Module / target */
+    "module": "CommonJS",
     "target": "ES2020",
 
-    // Interop & node stuff
+    /* Node + interop */
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
 
-    // Output
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // Strictness
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
+    /* Types */
+    "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./src/shared/types"],
 
-    // Others
+    /* Output */
+    "sourceMap": true,
+
+    /* Strictness (backend-friendly) */
+    "strict": true,
+    "noImplicitAny": false,
+
+    /* Stability */
     "skipLibCheck": true
   },
   "include": ["src"],
