@@ -5,7 +5,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import rateLimit from "express-rate-limit";
-
+import "express";
 /* ================= AUTH ================= */
 
 export function authMiddleware(
@@ -73,3 +73,13 @@ export const avatarUploadLimiter = rateLimit({
     message: "Too many avatar uploads. Try again later.",
   },
 });
+
+
+
+declare global {
+  namespace Express {
+    interface Request {
+      file?: Multer.File;
+    }
+  }
+}
