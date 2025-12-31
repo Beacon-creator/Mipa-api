@@ -3,26 +3,34 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import mongoose from "mongoose";
-// IMPORTANT: adjust these relative imports if your repo layout differs.
-// This assumes models are at backendAPI/mipa-api/src/modules/...
 import { Restaurant } from "../src/modules/restaurants/restaurant.model";
 import { MenuItem } from "../src/modules/menu/menuItem.model";
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/mipa";
+const MONGO_URI =
+  process.env.MONGO_URI || "mongodb://localhost:27017/mipa";
 const WIPE = process.env.SEED_WIPE === "true";
 
-async function main() {
-  await mongoose.connect(MONGO_URI, {});
+async function seed() {
+  await mongoose.connect(MONGO_URI);
+  console.log("✅ Connected to MongoDB");
 
   try {
     if (WIPE) {
-      await Promise.all([Restaurant.deleteMany({}), MenuItem.deleteMany({})]);
+      await Promise.all([
+        Restaurant.deleteMany({}),
+        MenuItem.deleteMany({}),
+      ]);
+      console.log("🧹 Database wiped");
     }
+
+    /* ================================
+       RESTAURANTS
+    ================================= */
 
     const restaurantsData = [
       {
         name: "Mama's Kitchen",
-        description: "Homestyle meals made with love",
+        description: "Homestyle Nigerian meals made with love",
         imageUrl: "https://picsum.photos/seed/mama/800/600",
         location: "Ikeja, Lagos",
         distanceKm: 0.5,
@@ -40,42 +48,73 @@ async function main() {
         categories: ["drink", "cake"],
         priceLevel: 3,
       },
+      {
+        name: "Green Bowl",
+        description: "Healthy bowls and salads",
+        imageUrl: "https://picsum.photos/seed/green/800/600",
+        location: "Lekki Phase 1",
+        distanceKm: 2.1,
+        rating: 4.8,
+        categories: ["healthy", "food"],
+        priceLevel: 3,
+      },
+      {
+        name: "Street Bites",
+        description: "Fast street food & grills",
+        imageUrl: "https://picsum.photos/seed/street/800/600",
+        location: "Yaba, Lagos",
+        distanceKm: 0.9,
+        rating: 4.4,
+        categories: ["snacks", "food"],
+        priceLevel: 1,
+      },
     ];
 
     const createdRestaurants = await Restaurant.create(restaurantsData);
+    console.log(`🍽️  Inserted ${createdRestaurants.length} restaurants`);
 
-    (createdRestaurants as any[]).forEach((r: any) =>
-      console.log(`- ${r.name}  id=${r._id?.toString()}`)
-    );
+    /* ================================
+       RESTAURANT ID MAP (KEY PART)
+    ================================= */
 
-    const mamaId = (createdRestaurants as any[])[0]._id.toString();
-    const bellaId = (createdRestaurants as any[])[1]._id.toString();
+    const restaurantIdMap = new Map<string, string>();
+    createdRestaurants.forEach((r: any) => {
+      restaurantIdMap.set(r.name, r._id.toString());
+      console.log(`- ${r.name} → ${r._id}`);
+    });
+
+    /* ================================
+       MENU ITEMS (USE restaurantName)
+    ================================= */
 
     const menuItemsData = [
+      // Mama's Kitchen
       {
-        restaurant: mamaId,
+        restaurantName: "Mama's Kitchen",
         name: "Jollof Rice & Chicken",
-        description: "Spicy jollof rice served with fried chicken",
+        description: "Smoky jollof rice with crispy chicken",
         imageUrl: "https://picsum.photos/seed/jollof/600/400",
         price: 1200,
         type: "food",
         isAvailable: true,
-        tags: ["spicy", "popular"],
+        tags: ["popular", "spicy"],
       },
       {
-        restaurant: mamaId,
+        restaurantName: "Mama's Kitchen",
         name: "Fried Plantain (Dodo)",
-        description: "Sweet fried plantain",
+        description: "Sweet golden fried plantain",
         imageUrl: "https://picsum.photos/seed/plantain/600/400",
         price: 300,
         type: "snacks",
         isAvailable: true,
         tags: ["side"],
       },
+
+      // Café Bella
       {
-        restaurant: bellaId,
+        restaurantName: "Café Bella",
         name: "Latte (Medium)",
-        description: "Creamy latte with fresh espresso",
+        description: "Creamy latte with rich espresso",
         imageUrl: "https://picsum.photos/seed/latte/600/400",
         price: 800,
         type: "drink",
@@ -83,28 +122,96 @@ async function main() {
         tags: ["coffee"],
       },
       {
-        restaurant: bellaId,
+        restaurantName: "Café Bella",
         name: "Blueberry Muffin",
-        description: "Soft muffin with juicy blueberries",
+        description: "Soft muffin filled with blueberries",
         imageUrl: "https://picsum.photos/seed/muffin/600/400",
         price: 450,
         type: "cake",
         isAvailable: true,
         tags: ["bakery"],
       },
+
+      // Green Bowl
+      {
+        restaurantName: "Green Bowl",
+        name: "Chicken Power Bowl",
+        description: "Grilled chicken with quinoa & veggies",
+        imageUrl: "https://picsum.photos/seed/bowl/600/400",
+        price: 1800,
+        type: "food",
+        isAvailable: true,
+        tags: ["healthy", "protein"],
+      },
+      {
+        restaurantName: "Green Bowl",
+        name: "Avocado Smoothie",
+        description: "Fresh avocado blended smoothie",
+        imageUrl: "https://picsum.photos/seed/smoothie/600/400",
+        price: 1000,
+        type: "drink",
+        isAvailable: true,
+        tags: ["healthy"],
+      },
+
+      // Street Bites
+      {
+        restaurantName: "Street Bites",
+        name: "Suya Wrap",
+        description: "Spicy beef suya wrapped in flatbread",
+        imageUrl: "https://picsum.photos/seed/suya/600/400",
+        price: 900,
+        type: "food",
+        isAvailable: true,
+        tags: ["spicy"],
+      },
+      {
+        restaurantName: "Street Bites",
+        name: "Grilled Corn",
+        description: "Charcoal grilled sweet corn",
+        imageUrl: "https://picsum.photos/seed/corn/600/400",
+        price: 300,
+        type: "snacks",
+        isAvailable: true,
+        tags: ["street"],
+      },
     ];
 
-    const createdMenu = await MenuItem.create(menuItemsData);
-    (createdMenu as any[]).forEach((m: any) =>
-      console.log(`- ${m.name}  id=${m._id?.toString()}  restaurant=${m.restaurant?.toString()}`)
-    );
+    /* ================================
+       FIX MENU ITEM IDs (IMPORTANT)
+    ================================= */
+
+    const menuItemsToInsert = menuItemsData.map((item) => {
+      const restaurantId = restaurantIdMap.get(item.restaurantName);
+
+      if (!restaurantId) {
+        throw new Error(
+          `Restaurant not found for menu item: ${item.name}`
+        );
+      }
+
+      return {
+        restaurant: restaurantId, // ✅ REAL MongoDB ID
+        name: item.name,
+        description: item.description,
+        imageUrl: item.imageUrl,
+        price: item.price,
+        type: item.type,
+        isAvailable: item.isAvailable,
+        tags: item.tags,
+      };
+    });
+
+    const createdMenuItems = await MenuItem.create(menuItemsToInsert);
+    console.log(` Inserted ${createdMenuItems.length} menu items`);
+
+    console.log(" SEED COMPLETED SUCCESSFULLY");
   } catch (err) {
+    console.error(" Seed failed:", err);
   } finally {
     await mongoose.disconnect();
     process.exit(0);
   }
 }
 
-main().catch((err) => {
-  process.exit(1);
-});
+seed();
