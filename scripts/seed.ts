@@ -23,15 +23,13 @@ async function seed() {
       console.log("🧹 Database wiped");
     }
 
-    /* ================================
-       RESTAURANTS
-    ================================= */
+    /* ==========RESTAURANTS============ */
 
     const restaurantsData = [
       {
         name: "Mama's Kitchen",
         description: "Homestyle Nigerian meals made with love",
-        imageUrl: "https://picsum.photos/seed/mama/800/600",
+        imageUrl: "https://tinyurl.com/naijameal",
         location: "Ikeja, Lagos",
         distanceKm: 0.5,
         rating: 4.7,
@@ -41,7 +39,7 @@ async function seed() {
       {
         name: "Café Bella",
         description: "Fresh coffee and bakery treats",
-        imageUrl: "https://picsum.photos/seed/bella/800/600",
+        imageUrl: "https://tinyurl.com/coffeebakery",
         location: "Victoria Island, Lagos",
         distanceKm: 1.2,
         rating: 4.6,
@@ -51,17 +49,17 @@ async function seed() {
       {
         name: "Green Bowl",
         description: "Healthy bowls and salads",
-        imageUrl: "https://picsum.photos/seed/green/800/600",
+        imageUrl: "https://tinyurl.com/healthybowlmipa",
         location: "Lekki Phase 1",
         distanceKm: 2.1,
         rating: 4.8,
-        categories: ["healthy", "food"],
+        categories: ["salad", "food"],
         priceLevel: 3,
       },
       {
         name: "Street Bites",
         description: "Fast street food & grills",
-        imageUrl: "https://picsum.photos/seed/street/800/600",
+        imageUrl: "https://tinyurl.com/streetfoodmipa",
         location: "Yaba, Lagos",
         distanceKm: 0.9,
         rating: 4.4,
@@ -93,7 +91,7 @@ async function seed() {
         restaurantName: "Mama's Kitchen",
         name: "Jollof Rice & Chicken",
         description: "Smoky jollof rice with crispy chicken",
-        imageUrl: "https://picsum.photos/seed/jollof/600/400",
+        imageUrl: "https://tinyurl.com/jollofchicken",
         price: 1200,
         type: "food",
         isAvailable: true,
@@ -101,9 +99,9 @@ async function seed() {
       },
       {
         restaurantName: "Mama's Kitchen",
-        name: "Fried Plantain (Dodo)",
-        description: "Sweet golden fried plantain",
-        imageUrl: "https://picsum.photos/seed/plantain/600/400",
+        name: "Fried chops",
+        description: "Sweet small chops",
+        imageUrl: "https://tinyurl.com/smallchops",
         price: 300,
         type: "snacks",
         isAvailable: true,
@@ -115,7 +113,7 @@ async function seed() {
         restaurantName: "Café Bella",
         name: "Latte (Medium)",
         description: "Creamy latte with rich espresso",
-        imageUrl: "https://picsum.photos/seed/latte/600/400",
+        imageUrl: "https://tinyurl.com/lattemipa",
         price: 800,
         type: "drink",
         isAvailable: true,
@@ -125,7 +123,7 @@ async function seed() {
         restaurantName: "Café Bella",
         name: "Blueberry Muffin",
         description: "Soft muffin filled with blueberries",
-        imageUrl: "https://picsum.photos/seed/muffin/600/400",
+        imageUrl: "https://tinyurl.com/bberrymuffin",
         price: 450,
         type: "cake",
         isAvailable: true,
@@ -137,7 +135,7 @@ async function seed() {
         restaurantName: "Green Bowl",
         name: "Chicken Power Bowl",
         description: "Grilled chicken with quinoa & veggies",
-        imageUrl: "https://picsum.photos/seed/bowl/600/400",
+        imageUrl: "https://tinyurl.com/chickenbowlmipa",
         price: 1800,
         type: "food",
         isAvailable: true,
@@ -147,7 +145,7 @@ async function seed() {
         restaurantName: "Green Bowl",
         name: "Avocado Smoothie",
         description: "Fresh avocado blended smoothie",
-        imageUrl: "https://picsum.photos/seed/smoothie/600/400",
+        imageUrl: "https://tinyurl.com/avocadosmoothiemipa",
         price: 1000,
         type: "drink",
         isAvailable: true,
@@ -158,8 +156,8 @@ async function seed() {
       {
         restaurantName: "Street Bites",
         name: "Suya Wrap",
-        description: "Spicy beef suya wrapped in flatbread",
-        imageUrl: "https://picsum.photos/seed/suya/600/400",
+        description: "Spicy beef suya",
+        imageUrl: "https://tinyurl.com/suyamipa",
         price: 900,
         type: "food",
         isAvailable: true,
@@ -169,7 +167,7 @@ async function seed() {
         restaurantName: "Street Bites",
         name: "Grilled Corn",
         description: "Charcoal grilled sweet corn",
-        imageUrl: "https://picsum.photos/seed/corn/600/400",
+        imageUrl: "https://tinyurl.com/grilledcornmipa",
         price: 300,
         type: "snacks",
         isAvailable: true,
@@ -177,9 +175,7 @@ async function seed() {
       },
     ];
 
-    /* ================================
-       FIX MENU ITEM IDs (IMPORTANT)
-    ================================= */
+    // ====== MENU ITEM IDs
 
     const menuItemsToInsert = menuItemsData.map((item) => {
       const restaurantId = restaurantIdMap.get(item.restaurantName);
@@ -191,7 +187,7 @@ async function seed() {
       }
 
       return {
-        restaurant: restaurantId, // ✅ REAL MongoDB ID
+        restaurant: restaurantId, // MongoDB ID
         name: item.name,
         description: item.description,
         imageUrl: item.imageUrl,
