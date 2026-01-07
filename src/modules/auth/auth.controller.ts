@@ -70,7 +70,10 @@ export class AuthController {
       const result = await AuthService.requestPasswordReset(parsed);
 
       // result is { ok: true } or { ok: true, resetCode }
-      res.json(result);
+     res.json({
+  ok: true,
+  resetToken: (result as any).resetCode, // dev-only
+});
     } catch (err) {
       next(err);
     }
